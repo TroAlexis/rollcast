@@ -9,9 +9,16 @@ import { RollType } from "enums";
 import Style = Toast.Style;
 
 export default function main() {
+  const [input, setInput] = useState<string>("");
+  const [previousInput, setPreviousInput] = useState<string>();
   const [result, setResult] = useState<number>();
   const [rolls, setRolls] = useState<Roll[]>();
   const [type, setType] = useState<RollType>();
+
+  const handleCopy = async (result?: number) => {
+    await Clipboard.copy(result || "");
+    await showToast({ message: "Copied to clipboard. ", title: `You rolled - ${result}` });
+  };
 
   const handleSubmit = async (values: Form.Values) => {
     const { dice } = values;
@@ -25,20 +32,30 @@ export default function main() {
       setResult(result);
       setRolls(allRolls);
       setType(type);
+      setPreviousInput(input);
 
-      await Clipboard.copy(result);
-      await showToast({ message: "Copied to clipboard. ", title: `You rolled - ${result}` });
+      await handleCopy(result);
     } else {
       await showToast({ style: Style.Failure, message: `Incorrect format`, title: "Error" });
     }
   };
 
+  const handleCopyResult = () => handleCopy(result);
+
   return (
-    <Form actions={<FormActions onSubmit={handleSubmit} />}>
-      <Form.TextField id={"dice"} title={"Enter dice"} placeholder={"Input dice combination "} />
+    <Form actions={<FormActions onSubmit={handleSubmit} onCopy={handleCopyResult} />}>
+      <Form.TextField
+        value={input}
+        onChange={setInput}
+        id={"dice"}
+        title={"Enter dice"}
+        placeholder={"Input dice combination "}
+      />
       <Form.Description text={"Some examples - 2d20, 3d6, d8, d20:dis, d6:adv"} />
 
-      <Form.Description title={"🐉 Result:"} text={`${result || "—"}`} />
+      {previousInput && <Form.Description title={"🐉 Last roll:"} text={`${previousInput}`} />}
+
+      {result && <Form.Description title={"✏️ Total:"} text={`${result}`} />}
 
       <Form.Description text={" "} />
 
